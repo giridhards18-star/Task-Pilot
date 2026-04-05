@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Edit Task</h3>
+
+<form method="POST">
+    <input type="text" name="task" value="{{ task['task'] }}" required>
+
+    <input type="number" name="progress" value="{{ task['progress'] }}" min="0" max="100">
+
+    <input type="date" name="due_date" value="{{ task['due_date'] or '' }}">
+
+    <button type="submit">Update</button>
+</form>
+
+<br>
+
+<a href="/">⬅ Back</a>
+
+{% endblock %}

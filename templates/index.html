@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<p>Welcome {{ username }}</p>
+<a href="/logout">Logout</a>
+
+<hr>
+
+<form method="POST">
+    <input type="text" name="task" placeholder="Enter task" required>
+    <input type="number" name="progress" placeholder="Progress %" min="0" max="100">
+    <input type="date" name="due_date">
+    <button type="submit">Add Task</button>
+</form>
+
+<hr>
+
+<h4>Overall Progress: {{ percent }}%</h4>
+
+<div class="bar">
+    <div class="fill" style="width: {{ percent }}%;"></div>
+</div>
+
+<hr>
+
+<ul>
+{% for task in tasks %}
+
+<li class="task-card">
+
+    <a href="/edit/{{ task['id'] }}" class="edit-btn">✏</a>
+
+    <strong>{{ task["task"] }}</strong><br>
+
+    Progress: {{ task["progress"] }}%<br>
+
+    Due: {{ task["due_date"] or "No due date" }}
+
+    <br><br>
+
+    <a href="/complete/{{ task['id'] }}">✔</a>
+    <a href="/delete/{{ task['id'] }}">❌</a>
+
+</li>
+
+{% endfor %}
+</ul>
+
+{% endblock %}
