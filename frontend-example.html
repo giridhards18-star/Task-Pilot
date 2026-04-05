@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Pilot - Frontend Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, button { padding: 8px; margin: 5px 0; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .task { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Pilot</h1>
+
+        <!-- Login Form -->
+        <div id="login-section">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="login-username">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="login-password">
+            </div>
+            <button onclick="login()">Login</button>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-section" style="display: none;">
+            <h2>Register</h2>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="register-username">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="register-password">
+            </div>
+            <button onclick="register()">Register</button>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+        </div>
+
+        <!-- Tasks Section -->
+        <div id="tasks-section" style="display: none;">
+            <h2>Your Tasks</h2>
+            <button onclick="logout()">Logout</button>
+
+            <!-- Add Task Form -->
+            <h3>Add New Task</h3>
+            <div class="form-group">
+                <label>Task:</label>
+                <input type="text" id="task-text" placeholder="Enter task description">
+            </div>
+            <div class="form-group">
+                <label>Progress (%):</label>
+                <input type="number" id="task-progress" min="0" max="100" value="0">
+            </div>
+            <div class="form-group">
+                <label>Due Date:</label>
+                <input type="date" id="task-due-date">
+            </div>
+            <button onclick="addTask()">Add Task</button>
+
+            <!-- Tasks List -->
+            <div id="tasks-list">
+                <p>Loading tasks...</p>
+            </div>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <script src="frontend-api.js"></script>
+    <script>
+        // DOM elements
+        const loginSection = document.getElementById('login-section');
+        const registerSection = document.getElementById('register-section');
+        const tasksSection = document.getElementById('tasks-section');
+        const messageDiv = document.getElementById('message');
+
+        // Show messages
+        function showMessage(message, type = 'info') {
+            messageDiv.innerHTML = `<p class="${type}">${message}</p>`;
+            setTimeout(() => messageDiv.innerHTML = '', 5000);
+        }
+
+        // Toggle forms
+        function showRegister() {
+            loginSection.style.display = 'none';
+            registerSection.style.display = 'block';
+        }
+
+        function showLogin() {
+            registerSection.style.display = 'none';
+            loginSection.style.display = 'block';
+        }
+
+        // Authentication functions
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await login(username, password);
+                if (response.includes('Invalid credentials')) {
+                    showMessage('Invalid credentials', 'error');
+                } else {
+                    showMessage('Login successful!', 'success');
+                    showTasksSection();
+                    loadTasks();
+                }
+            } catch (error) {
+                showMessage('Login failed: ' + error.message, 'error');
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const response = await register(username, password);
+                if (response.includes('Username already exists')) {
+                    showMessage('Username already exists', 'error');
+                } else {
+                    showMessage('Registration successful! Please login.', 'success');
+                    showLogin();
+                }
+            } catch (error) {
+                showMessage('Registration failed: ' + error.message, 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await logout();
+                showMessage('Logged out successfully', 'success');
+                showLoginSection();
+            } catch (error) {
+                showMessage('Logout failed: ' + error.message, 'error');
+            }
+        }
+
+        // Task functions
+        async function addTask() {
+            const task = document.getElementById('task-text').value;
+            const progress = document.getElementById('task-progress').value;
+            const dueDate = document.getElementById('task-due-date').value;
+
+            try {
+                await addTask(task, progress, dueDate);
+                showMessage('Task added successfully!', 'success');
+                loadTasks();
+                // Clear form
+                document.getElementById('task-text').value = '';
+                document.getElementById('task-progress').value = '0';
+                document.getElementById('task-due-date').value = '';
+            } catch (error) {
+                showMessage('Failed to add task: ' + error.message, 'error');
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await getTasks();
+                document.getElementById('tasks-list').innerHTML = response;
+                // Note: Since Flask returns HTML, you might need to parse it or use a different approach
+                // For a proper SPA, consider making the backend return JSON instead
+            } catch (error) {
+                showMessage('Failed to load tasks: ' + error.message, 'error');
+            }
+        }
+
+        // Section switching
+        function showLoginSection() {
+            loginSection.style.display = 'block';
+            registerSection.style.display = 'none';
+            tasksSection.style.display = 'none';
+        }
+
+        function showTasksSection() {
+            loginSection.style.display = 'none';
+            registerSection.style.display = 'none';
+            tasksSection.style.display = 'block';
+        }
+
+        // Initialize
+        showLoginSection();
+    </script>
+</body>
+</html>
