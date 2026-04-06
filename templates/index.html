@@ -12,12 +12,12 @@
 <!-- Dashboard Header -->
 <div class="dashboard-header">
     <div class="welcome-section">
-        <h1><i class="fas fa-sun"></i> Good {{ 'morning' if 6 <= (now.hour or 9) < 12 else 'afternoon' if 12 <= (now.hour or 14) < 18 else 'evening' }}, {{ username }}!</h1>
+        <h1><i class="fas fa-sun"></i> Good {{ 'morning' if 6 <= now.hour < 12 else 'afternoon' if 12 <= now.hour < 18 else 'evening' }}, {{ username }}!</h1>
         <p>Here's your task overview for today</p>
     </div>
     <div class="date-display">
         <i class="fas fa-calendar-alt"></i>
-        <span>{{ (now or date.today()).strftime('%B %d, %Y') }}</span>
+        <span>{{ now.strftime('%B %d, %Y') }}</span>
     </div>
 </div>
 
@@ -63,7 +63,7 @@
                 <label class="form-label" for="due_date">
                     <i class="fas fa-calendar"></i> Due Date
                 </label>
-                <input type="date" id="due_date" name="due_date" class="form-input" min="{{ (now or date.today()).strftime('%Y-%m-%d') }}">
+                <input type="date" id="due_date" name="due_date" class="form-input" min="{{ today.strftime('%Y-%m-%d') }}">
             </div>
         </div>
 
@@ -84,7 +84,7 @@
 
     {% if tasks %}
         {% for task in tasks %}
-        <div class="task-card {% if task['progress'] == 100 %}completed{% endif %} {% if task['due_date'] and task['due_date'] < (now or date.today()).strftime('%Y-%m-%d') and task['progress'] < 100 %}overdue{% endif %}">
+        <div class="task-card {% if task['progress'] == 100 %}completed{% endif %} {% if task['due_date'] and task['due_date'] < now.strftime('%Y-%m-%d') and task['progress'] < 100 %}overdue{% endif %}">
             <div class="task-header">
                 <h4 class="task-title">{{ task["task"] }}</h4>
                 <div class="task-actions">
