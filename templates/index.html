@@ -1,50 +1,147 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard - Task Pilot{% endblock %}
+
+{% block nav %}
+    <a href="/logout" class="btn btn-secondary btn-small">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+{% endblock %}
+
 {% block content %}
-
-<p>Welcome {{ username }}</p>
-<a href="/logout">Logout</a>
-
-<hr>
-
-<form method="POST">
-    <input type="text" name="task" placeholder="Enter task" required>
-    <input type="number" name="progress" placeholder="Progress %" min="0" max="100">
-    <input type="date" name="due_date">
-    <button type="submit">Add Task</button>
-</form>
-
-<hr>
-
-<h4>Overall Progress: {{ percent }}%</h4>
-
-<div class="bar">
-    <div class="fill" style="width: {{ percent }}%;"></div>
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div class="welcome-section">
+        <h1><i class="fas fa-sun"></i> Good {{ 'morning' if 6 <= (now.hour or 9) < 12 else 'afternoon' if 12 <= (now.hour or 14) < 18 else 'evening' }}, {{ username }}!</h1>
+        <p>Here's your task overview for today</p>
+    </div>
+    <div class="date-display">
+        <i class="fas fa-calendar-alt"></i>
+        <span>{{ (now or date.today()).strftime('%B %d, %Y') }}</span>
+    </div>
 </div>
 
-<hr>
+<!-- Progress Section -->
+<div class="progress-section">
+    <div class="progress-header">
+        <h3 class="progress-title">
+            <i class="fas fa-chart-line"></i> Overall Progress
+        </h3>
+        <span class="progress-percentage">{{ percent }}%</span>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ percent }}%;"></div>
+    </div>
+    <p class="text-center" style="color: var(--gray-500); margin-top: var(--spacing-sm);">
+        {{ tasks|length }} tasks • {{ tasks|selectattr('progress', 'equalto', 100)|list|length }} completed
+    </p>
+</div>
 
-<ul>
-{% for task in tasks %}
+<!-- Add Task Form -->
+<div class="task-form">
+    <div class="form-title">
+        <h3><i class="fas fa-plus-circle"></i> Add New Task</h3>
+    </div>
 
-<li class="task-card">
+    <form method="POST" id="task-form">
+        <div class="form-group">
+            <label class="form-label" for="task">
+                <i class="fas fa-tasks"></i> Task Description
+            </label>
+            <input type="text" id="task" name="task" class="form-input" placeholder="What needs to be done?" required>
+        </div>
 
-    <a href="/edit/{{ task['_id'] }}" class="edit-btn">✏</a>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+            <div class="form-group">
+                <label class="form-label" for="progress">
+                    <i class="fas fa-percentage"></i> Progress (%)
+                </label>
+                <input type="number" id="progress" name="progress" class="form-input" placeholder="0" min="0" max="100" value="0">
+            </div>
 
-    <strong>{{ task["task"] }}</strong><br>
+            <div class="form-group">
+                <label class="form-label" for="due_date">
+                    <i class="fas fa-calendar"></i> Due Date
+                </label>
+                <input type="date" id="due_date" name="due_date" class="form-input" min="{{ (now or date.today()).strftime('%Y-%m-%d') }}">
+            </div>
+        </div>
 
-    Progress: {{ task["progress"] }}%<br>
+        <button type="submit" class="btn btn-success" id="add-task-btn">
+            <i class="fas fa-plus"></i> Add Task
+        </button>
+    </form>
+</div>
 
-    Due: {{ task["due_date"] or "No due date" }}
+<!-- Tasks Section -->
+<div class="tasks-section">
+    <div class="tasks-header">
+        <h3 class="tasks-title">
+            <i class="fas fa-list-check"></i> Your Tasks
+        </h3>
+        <span class="task-count">{{ tasks|length }} tasks</span>
+    </div>
 
-    <br><br>
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-card {% if task['progress'] == 100 %}completed{% endif %} {% if task['due_date'] and task['due_date'] < (now or date.today()).strftime('%Y-%m-%d') and task['progress'] < 100 %}overdue{% endif %}">
+            <div class="task-header">
+                <h4 class="task-title">{{ task["task"] }}</h4>
+                <div class="task-actions">
+                    <a href="/edit/{{ task['_id'] }}" class="btn btn-secondary btn-small" title="Edit Task">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="/complete/{{ task['_id'] }}" class="btn btn-success btn-small" title="Mark Complete">
+                        <i class="fas fa-check"></i>
+                    </a>
+                    <a href="/delete/{{ task['_id'] }}" class="btn btn-danger btn-small" title="Delete Task" onclick="return confirm('Are you sure you want to delete this task?')">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
 
-    <a href="/complete/{{ task['_id'] }}">✔</a>
-    <a href="/delete/{{ task['_id'] }}">❌</a>
+            <div class="task-meta">
+                <div class="task-meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Due: {{ task["due_date"] or "No due date" }}</span>
+                </div>
+                <div class="task-meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Created: {{ task.get('created_at', 'Recently') }}</span>
+                </div>
+            </div>
 
-</li>
+            <div class="task-progress">
+                <div class="task-progress-bar">
+                    <div class="task-progress-fill" style="width: {{ task['progress'] }}%;"></div>
+                </div>
+                <span class="task-progress-text">{{ task["progress"] }}%</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="task-card" style="text-align: center; padding: var(--spacing-2xl);">
+            <i class="fas fa-inbox" style="font-size: 3rem; color: var(--gray-300); margin-bottom: var(--spacing-md);"></i>
+            <h4 style="color: var(--gray-500); margin-bottom: var(--spacing-sm);">No tasks yet</h4>
+            <p style="color: var(--gray-400);">Add your first task above to get started!</p>
+        </div>
+    {% endif %}
+</div>
 
-{% endfor %}
-</ul>
+<script>
+// Add form submission loading state
+document.getElementById('task-form').addEventListener('submit', function(e) {
+    const btn = document.getElementById('add-task-btn');
+    TaskPilot.toggleLoading(btn, true);
+});
 
+// Add success animation for newly added tasks
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight the most recently added task
+    const taskCards = document.querySelectorAll('.task-card');
+    if (taskCards.length > 0) {
+        taskCards[0].classList.add('bounce-in');
+    }
+});
+</script>
 {% endblock %}
