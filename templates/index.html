@@ -29,7 +29,7 @@
 
 <li class="task-card">
 
-    <a href="/edit/{{ task['id'] }}" class="edit-btn">✏</a>
+    <a href="/edit/{{ task['_id'] }}" class="edit-btn">✏</a>
 
     <strong>{{ task["task"] }}</strong><br>
 
@@ -39,8 +39,8 @@
 
     <br><br>
 
-    <a href="/complete/{{ task['id'] }}">✔</a>
-    <a href="/delete/{{ task['id'] }}">❌</a>
+    <a href="/complete/{{ task['_id'] }}">✔</a>
+    <a href="/delete/{{ task['_id'] }}">❌</a>
 
 </li>
 

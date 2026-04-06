@@ -1,43 +1,33 @@
 from flask import Flask, render_template, request, redirect, session
 from flask_cors import CORS
-import sqlite3
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 from datetime import date
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-app.secret_key = "secret123"
+app.secret_key = os.getenv('SECRET_KEY', 'secret123')
 
+# MongoDB connection
+MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://giridhards18_db_user:uAovwnOOK26qYUJo@taskpilot.xqvmkpd.mongodb.net/')
+DB_NAME = os.getenv('MONGODB_DB_NAME', 'taskpilot')
 
-def get_db():
-    conn = sqlite3.connect("tasks.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+client = MongoClient(MONGODB_URI)
+db = client[DB_NAME]
 
+# Collections
+users_collection = db.users
+tasks_collection = db.tasks
 
-# CREATE TABLES
-conn = get_db()
-cursor = conn.cursor()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT
-)
-""")
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tasks(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    task TEXT,
-    progress INTEGER DEFAULT 0,
-    due_date TEXT
-)
-""")
-
-conn.commit()
-conn.close()
+# Ensure indexes for better performance
+users_collection.create_index("username", unique=True)
+tasks_collection.create_index("username")
+tasks_collection.create_index("due_date")
 
 
 # HOME
@@ -45,9 +35,6 @@ conn.close()
 def home():
     if "username" not in session:
         return redirect('/login')
-
-    conn = get_db()
-    cursor = conn.cursor()
 
     if request.method == "POST":
         task = request.form.get("task")
@@ -57,58 +44,72 @@ def home():
             progress = 0
         due_date = request.form.get("due_date")
 
-        cursor.execute(
-            "INSERT INTO tasks (username, task, progress, due_date) VALUES (?, ?, ?, ?)",
-            (session["username"], task, progress, due_date)
-        )
-        conn.commit()
+        # Insert new task
+        task_doc = {
+            "username": session["username"],
+            "task": task,
+            "progress": progress,
+            "due_date": due_date,
+            "created_at": date.today().isoformat()
+        }
+        tasks_collection.insert_one(task_doc)
 
-    cursor.execute("SELECT * FROM tasks WHERE username=?", (session["username"],))
-    tasks = cursor.fetchall()
+    # Get all tasks for the user
+    tasks_cursor = tasks_collection.find({"username": session["username"]})
+    tasks = list(tasks_cursor)
+
+    # Convert ObjectId to string for template compatibility
+    for task in tasks:
+        task["_id"] = str(task["_id"])
 
     total = len(tasks)
     percent = int(sum([t["progress"] for t in tasks]) / total) if total > 0 else 0
 
     today = date.today().isoformat()
 
-    conn.close()
-
     return render_template("index.html", tasks=tasks, username=session["username"], percent=percent, today=today)
 
 
 # COMPLETE
-@app.route('/complete/<int:id>')
-def complete(id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE tasks SET progress=100 WHERE id=? AND username=?", (id, session["username"]))
-    conn.commit()
-    conn.close()
+@app.route('/complete/<task_id>')
+def complete(task_id):
+    try:
+        # Update task progress to 100
+        tasks_collection.update_one(
+            {"_id": ObjectId(task_id), "username": session["username"]},
+            {"$set": {"progress": 100}}
+        )
+    except:
+        pass  # Invalid ObjectId, just redirect
+
     return redirect('/')
 
 
 # DELETE
-@app.route('/delete/<int:id>')
-def delete(id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM tasks WHERE id=? AND username=?", (id, session["username"]))
-    conn.commit()
-    conn.close()
+@app.route('/delete/<task_id>')
+def delete(task_id):
+    try:
+        # Delete the task
+        tasks_collection.delete_one(
+            {"_id": ObjectId(task_id), "username": session["username"]}
+        )
+    except:
+        pass  # Invalid ObjectId, just redirect
+
     return redirect('/')
 
 
 # EDIT
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit(id):
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM tasks WHERE id=? AND username=?", (id, session["username"]))
-    task = cursor.fetchone()
+@app.route('/edit/<task_id>', methods=['GET', 'POST'])
+def edit(task_id):
+    try:
+        task = tasks_collection.find_one(
+            {"_id": ObjectId(task_id), "username": session["username"]}
+        )
+    except:
+        return redirect('/')  # Invalid ObjectId
 
     if not task:
-        conn.close()
         return redirect('/')
 
     if request.method == "POST":
@@ -119,17 +120,20 @@ def edit(id):
             progress = 0
         due_date = request.form.get("due_date")
 
-        cursor.execute("""
-            UPDATE tasks
-            SET task=?, progress=?, due_date=?
-            WHERE id=? AND username=?
-        """, (new_task, progress, due_date, id, session["username"]))
+        # Update the task
+        tasks_collection.update_one(
+            {"_id": ObjectId(task_id), "username": session["username"]},
+            {"$set": {
+                "task": new_task,
+                "progress": progress,
+                "due_date": due_date
+            }}
+        )
 
-        conn.commit()
-        conn.close()
         return redirect('/')
 
-    conn.close()
+    # Convert ObjectId to string for template
+    task["_id"] = str(task["_id"])
     return render_template("edit.html", task=task)
 
 
@@ -140,16 +144,17 @@ def register():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        conn = get_db()
-        cursor = conn.cursor()
-
         try:
-            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-            conn.commit()
-            conn.close()
+            # Try to insert new user
+            user_doc = {
+                "username": username,
+                "password": password,  # In production, hash the password!
+                "created_at": date.today().isoformat()
+            }
+            users_collection.insert_one(user_doc)
             return redirect('/login')
-        except sqlite3.IntegrityError:
-            conn.close()
+        except:
+            # Username already exists (unique index violation)
             return "Username already exists"
 
     return render_template("register.html")
@@ -162,12 +167,11 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = cursor.fetchone()
-        conn.close()
+        # Find user with matching credentials
+        user = users_collection.find_one({
+            "username": username,
+            "password": password
+        })
 
         if user:
             session["username"] = username
