@@ -9,82 +9,61 @@
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-title">
-        <h2><i class="fas fa-edit"></i> Edit Task</h2>
-        <p>Update your task details below</p>
+<section class="panel">
+    <div class="panel-inner">
+        <div class="section-title">
+            <div>
+                <h2>Edit Task</h2>
+                <p class="subtext">Adjust the task details and keep your progress updated.</p>
+            </div>
+            <span class="badge">Task settings</span>
+        </div>
+
+        <form method="POST" id="edit-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="task">Task description</label>
+                    <input type="text" id="task" name="task" class="form-input" value="{{ task['task'] }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="progress">Progress (%)</label>
+                    <input type="number" id="progress" name="progress" class="form-input" value="{{ task['progress'] }}" min="0" max="100" required>
+                </div>
+                <div class="form-group form-grid-full">
+                    <label class="form-label" for="due_date">Due date</label>
+                    <input type="date" id="due_date" name="due_date" class="form-input" value="{{ task['due_date'] or '' }}">
+                </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-top:1.25rem;">
+                <button type="submit" class="btn btn-primary" id="update-btn">
+                    <i class="fas fa-save"></i> Update Task
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
+</section>
 
-    <form method="POST" id="edit-form">
-        <div class="form-group">
-            <label class="form-label" for="task">
-                <i class="fas fa-tasks"></i> Task Description
-            </label>
-            <input type="text" id="task" name="task" class="form-input" value="{{ task['task'] }}" required>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-            <div class="form-group">
-                <label class="form-label" for="progress">
-                    <i class="fas fa-percentage"></i> Progress (%)
-                </label>
-                <input type="number" id="progress" name="progress" class="form-input" value="{{ task['progress'] }}" min="0" max="100" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="due_date">
-                    <i class="fas fa-calendar"></i> Due Date
-                </label>
-                <input type="date" id="due_date" name="due_date" class="form-input" value="{{ task['due_date'] or '' }}">
-            </div>
-        </div>
-
-        <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);">
-            <button type="submit" class="btn btn-primary" id="update-btn">
-                <i class="fas fa-save"></i> Update Task
-            </button>
-            <a href="/" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancel
-            </a>
-        </div>
-    </form>
-
-    <!-- Task Info Card -->
-    <div class="task-card" style="margin-top: var(--spacing-xl);">
-        <div class="task-header">
-            <h4 class="task-title">Task Information</h4>
+<section class="panel" style="margin-top:1.5rem;">
+    <div class="panel-inner">
+        <div class="section-title">
+            <h3>Task details</h3>
+            <span class="badge">ID: {{ task['_id'] }}</span>
         </div>
         <div class="task-meta">
-            <div class="task-meta-item">
-                <i class="fas fa-calendar-plus"></i>
-                <span>Created: {{ task.get('created_at', 'Unknown') }}</span>
-            </div>
-            <div class="task-meta-item">
-                <i class="fas fa-hashtag"></i>
-                <span>ID: {{ task['_id'] }}</span>
-            </div>
+            <div class="task-meta-item"><i class="fas fa-calendar-plus"></i><span>Created: {{ task.get('created_at', 'Unknown') }}</span></div>
+            <div class="task-meta-item"><i class="fas fa-calendar-day"></i><span>Due date: {{ task['due_date'] or 'Not set' }}</span></div>
+            <div class="task-meta-item"><i class="fas fa-percent"></i><span>Progress: {{ task['progress'] }}%</span></div>
         </div>
     </div>
-</div>
+</section>
 
 <script>
 document.getElementById('edit-form').addEventListener('submit', function(e) {
     const btn = document.getElementById('update-btn');
     TaskPilot.toggleLoading(btn, true);
-});
-
-// Add current progress visualization
-document.addEventListener('DOMContentLoaded', function() {
-    const progressInput = document.getElementById('progress');
-    const progressValue = progressInput.value;
-
-    // Add visual feedback for progress changes
-    progressInput.addEventListener('input', function() {
-        const value = this.value;
-        if (value == 100) {
-            TaskPilot.showAlert('Task will be marked as completed!', 'success', 2000);
-        }
-    });
 });
 </script>
 {% endblock %}

@@ -26,9 +26,7 @@
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="app-container">
-        <!-- Header -->
         <header class="app-header">
             <div class="header-content">
                 <div class="logo">
@@ -41,20 +39,17 @@
             </div>
         </header>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="content-wrapper">
                 {% block content %}{% endblock %}
             </div>
         </main>
 
-        <!-- Footer -->
         <footer class="app-footer">
-            <p>&copy; 2024 Task Pilot. Built with <i class="fas fa-heart text-red"></i> for productivity.</p>
+            <p>&copy; 2024 Task Pilot. Built for modern productivity.</p>
         </footer>
     </div>
 
-    <!-- Scripts -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

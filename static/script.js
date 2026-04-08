@@ -153,22 +153,13 @@ function initializeTaskAnimations() {
 }
 
 function initializeProgressAnimations() {
-    // Animate progress bars on page load
-    document.querySelectorAll('.progress-fill').forEach(fill => {
-        const width = fill.style.width;
+    document.querySelectorAll('.progress-fill[data-progress], .task-progress-fill[data-progress]').forEach(fill => {
+        const progress = parseFloat(fill.dataset.progress) || 0;
         fill.style.width = '0%';
-        setTimeout(() => {
-            fill.style.width = width;
-        }, 500);
-    });
 
-    // Animate task progress bars
-    document.querySelectorAll('.task-progress-fill').forEach(fill => {
-        const width = fill.style.width;
-        fill.style.width = '0%';
         setTimeout(() => {
-            fill.style.width = width;
-        }, 800);
+            fill.style.width = `${progress}%`;
+        }, 50);
     });
 }
 

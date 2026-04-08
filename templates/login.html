@@ -9,35 +9,36 @@
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-title">
-        <h2><i class="fas fa-sign-in-alt"></i> Welcome Back</h2>
-        <p>Sign in to continue managing your tasks</p>
-    </div>
+<div class="hero-panel">
+    <section class="auth-panel panel">
+        <div class="panel-inner">
+            <div class="section-title">
+                <div>
+                    <h2>Welcome Back</h2>
+                    <p class="subtext">Sign in to access your task dashboard and stay productive.</p>
+                </div>
+                <span class="badge">Fast login</span>
+            </div>
 
-    <form method="POST" id="login-form">
-        <div class="form-group">
-            <label class="form-label" for="username">
-                <i class="fas fa-user"></i> Username
-            </label>
-            <input type="text" id="username" name="username" class="form-input" placeholder="Enter your username" required>
+            <form method="POST" id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter your username" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+
+            <p class="form-footer">Don't have an account? <a href="/register">Create one</a></p>
         </div>
-
-        <div class="form-group">
-            <label class="form-label" for="password">
-                <i class="fas fa-lock"></i> Password
-            </label>
-            <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary" id="login-btn">
-            <i class="fas fa-sign-in-alt"></i> Sign In
-        </button>
-    </form>
-
-    <div class="form-footer">
-        <p>Don't have an account? <a href="/register">Create one here</a></p>
-    </div>
+    </section>
 </div>
 
 <script>
